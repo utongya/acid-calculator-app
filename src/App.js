@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback here
 
 // A simple custom alert/message box component
 const MessageBox = ({ message, onClose }) => {
@@ -64,20 +64,9 @@ const App = () => {
     },
   };
 
-  // Effect to recalculate CW data whenever relevant inputs change
-  useEffect(() => {
-    if (calculationBase === 'cw_data') {
-      calculateCoolingWaterFlows();
-    } else {
-      // Clear calculated CW flows if not in CW data mode
-      setCalculatedEvaporation(null);
-      setCalculatedBlowdown(null);
-      setCalculatedMakeup(null);
-    }
-  }, [recirculationFlow, diffTemperature, cyclesOfConcentration, calculationBase]);
-
   // Function to calculate Evaporation, Blowdown, and Makeup from CW Data
-  const calculateCoolingWaterFlows = () => {
+  // Wrapped with useCallback to memoize it, so it only changes when its dependencies change
+  const calculateCoolingWaterFlows = useCallback(() => {
     const recircFlow = parseFloat(recirculationFlow);
     const deltaT = parseFloat(diffTemperature);
     const cycles = parseFloat(cyclesOfConcentration);
@@ -86,7 +75,8 @@ const App = () => {
       setCalculatedEvaporation(null);
       setCalculatedBlowdown(null);
       setCalculatedMakeup(null);
-      // if (cycles <= 1 && !isNaN(cycles)) { // Suppressed for live input, main validation handles
+      // Suppress for live input, main validation handles
+      // if (cycles <= 1 && !isNaN(cycles)) {
       //   setMessage('Cycles of Concentration must be greater than 1 for accurate blowdown calculation.');
       // }
       return;
@@ -105,7 +95,20 @@ const App = () => {
     setCalculatedEvaporation(evap_m3_hr);
     setCalculatedBlowdown(blowdown_m3_hr);
     setCalculatedMakeup(makeup_m3_hr);
-  };
+  }, [recirculationFlow, diffTemperature, cyclesOfConcentration]); // Dependencies for useCallback
+
+  // Effect to recalculate CW data whenever relevant inputs change
+  // Now includes calculateCoolingWaterFlows in its dependency array
+  useEffect(() => {
+    if (calculationBase === 'cw_data') {
+      calculateCoolingWaterFlows();
+    } else {
+      // Clear calculated CW flows if not in CW data mode
+      setCalculatedEvaporation(null);
+      setCalculatedBlowdown(null);
+      setCalculatedMakeup(null);
+    }
+  }, [calculationBase, calculateCoolingWaterFlows]); // Fixed: Added calculateCoolingWaterFlows as a dependency
 
   // Function to handle the main acid calculation
   const calculateAcidUsage = () => {
