@@ -1,18 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
+import React, { useState, useEffect } from 'react';
 
 // A simple custom alert/message box component
 const MessageBox = ({ message, onClose }) => {
   if (!message) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm mx-auto text-center transform scale-95 animate-zoom-in">
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-auto text-center">
         <p className="text-lg font-semibold text-gray-800 mb-4">{message}</p>
         <button
           onClick={onClose}
-          className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-bold rounded-lg shadow-md hover:from-blue-700 hover:to-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-300 ease-in-out transform hover:scale-105"
+          className="px-6 py-2 bg-blue-600 text-white font-bold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-150 ease-in-out"
         >
-          Got It!
+          OK
         </button>
       </div>
     </div>
@@ -64,9 +64,20 @@ const App = () => {
     },
   };
 
+  // Effect to recalculate CW data whenever relevant inputs change
+  useEffect(() => {
+    if (calculationBase === 'cw_data') {
+      calculateCoolingWaterFlows();
+    } else {
+      // Clear calculated CW flows if not in CW data mode
+      setCalculatedEvaporation(null);
+      setCalculatedBlowdown(null);
+      setCalculatedMakeup(null);
+    }
+  }, [recirculationFlow, diffTemperature, cyclesOfConcentration, calculationBase]);
+
   // Function to calculate Evaporation, Blowdown, and Makeup from CW Data
-  // Wrapped with useCallback to memoize it, so it only changes when its dependencies change
-  const calculateCoolingWaterFlows = useCallback(() => {
+  const calculateCoolingWaterFlows = () => {
     const recircFlow = parseFloat(recirculationFlow);
     const deltaT = parseFloat(diffTemperature);
     const cycles = parseFloat(cyclesOfConcentration);
@@ -75,8 +86,7 @@ const App = () => {
       setCalculatedEvaporation(null);
       setCalculatedBlowdown(null);
       setCalculatedMakeup(null);
-      // Suppress for live input, main validation handles
-      // if (cycles <= 1 && !isNaN(cycles)) {
+      // if (cycles <= 1 && !isNaN(cycles)) { // Suppressed for live input, main validation handles
       //   setMessage('Cycles of Concentration must be greater than 1 for accurate blowdown calculation.');
       // }
       return;
@@ -95,20 +105,7 @@ const App = () => {
     setCalculatedEvaporation(evap_m3_hr);
     setCalculatedBlowdown(blowdown_m3_hr);
     setCalculatedMakeup(makeup_m3_hr);
-  }, [recirculationFlow, diffTemperature, cyclesOfConcentration]); // Dependencies for useCallback
-
-  // Effect to recalculate CW data whenever relevant inputs change
-  // Now includes calculateCoolingWaterFlows in its dependency array
-  useEffect(() => {
-    if (calculationBase === 'cw_data') {
-      calculateCoolingWaterFlows();
-    } else {
-      // Clear calculated CW flows if not in CW data mode
-      setCalculatedEvaporation(null);
-      setCalculatedBlowdown(null);
-      setCalculatedMakeup(null);
-    }
-  }, [calculationBase, calculateCoolingWaterFlows]); // Fixed: Added calculateCoolingWaterFlows as a dependency
+  };
 
   // Function to handle the main acid calculation
   const calculateAcidUsage = () => {
@@ -216,21 +213,19 @@ const App = () => {
 
   // Render the component
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 p-4 sm:p-6 font-inter flex flex-col items-center justify-center">
-      {/* Main Card Container */}
-      <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 w-full max-w-md md:max-w-lg lg:max-w-xl border border-blue-200 transform transition-all duration-300 hover:shadow-3xl">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 text-center mb-2 leading-tight">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-6 font-inter flex flex-col items-center justify-center">
+      <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 w-full max-w-md md:max-w-lg lg:max-w-xl border border-blue-200">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-800 text-center mb-2">
           Cooling Water Acid Dosage Calculator
         </h1>
-        <p className="text-sm text-gray-600 text-center mb-6 font-medium">
+        <p className="text-sm text-gray-600 text-center mb-6">
           Created by Unnop Tongya
         </p>
 
-        {/* Input Fields Section */}
-        <div className="space-y-5">
-          {/* Alkalinity Makeup */}
+        {/* Input Fields */}
+        <div className="space-y-4">
           <div>
-            <label htmlFor="alkalinityMakeup" className="block text-sm font-semibold text-gray-700 mb-1">
+            <label htmlFor="alkalinityMakeup" className="block text-sm font-medium text-gray-700 mb-1">
               Alkalinity of Makeup Water (mg/L as CaCO₃)
             </label>
             <input
@@ -239,14 +234,13 @@ const App = () => {
               value={alkalinityMakeup}
               onChange={(e) => setAlkalinityMakeup(e.target.value)}
               placeholder="e.g., 200"
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0 transition duration-200 focus:shadow-md"
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
               min="0"
             />
           </div>
 
-          {/* Alkalinity Desired */}
           <div>
-            <label htmlFor="alkalinityDesired" className="block text-sm font-semibold text-gray-700 mb-1">
+            <label htmlFor="alkalinityDesired" className="block text-sm font-medium text-gray-700 mb-1">
               Desired Alkalinity in Cooling Water (mg/L as CaCO₃)
             </label>
             <input
@@ -255,14 +249,13 @@ const App = () => {
               value={alkalinityDesired}
               onChange={(e) => setAlkalinityDesired(e.target.value)}
               placeholder="e.g., 50"
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0 transition duration-200 focus:shadow-md"
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
               min="0"
             />
           </div>
 
-          {/* Cycles of Concentration */}
           <div>
-            <label htmlFor="cyclesOfConcentration" className="block text-sm font-semibold text-gray-700 mb-1">
+            <label htmlFor="cyclesOfConcentration" className="block text-sm font-medium text-gray-700 mb-1">
                 Cycles of Concentration
             </label>
             <input
@@ -271,64 +264,54 @@ const App = () => {
               value={cyclesOfConcentration}
               onChange={(e) => setCyclesOfConcentration(e.target.value)}
               placeholder="e.g., 4"
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0 transition duration-200 focus:shadow-md"
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
               min="0"
             />
           </div>
 
-          {/* Type of Acid */}
           <div>
-            <label htmlFor="acidType" className="block text-sm font-semibold text-gray-700 mb-1">
+            <label htmlFor="acidType" className="block text-sm font-medium text-gray-700 mb-1">
               Type of Acid
             </label>
-            <div className="relative">
-              <select
-                id="acidType"
-                value={acidType}
-                onChange={(e) => setAcidType(e.target.value)}
-                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white pr-10 appearance-none transition duration-200 focus:shadow-md"
-              >
-                <option value="sulfuric">98% Sulfuric Acid (H₂SO₄)</option>
-                <option value="hydrochloric">35% Hydrochloric Acid (HCl)</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-              </div>
-            </div>
+            <select
+              id="acidType"
+              value={acidType}
+              onChange={(e) => setAcidType(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white pr-8"
+            >
+              <option value="sulfuric">98% Sulfuric Acid (H₂SO₄)</option>
+              <option value="hydrochloric">35% Hydrochloric Acid (HCl)</option>
+            </select>
           </div>
 
           {/* New Calculation Base Dropdown */}
           <div>
-            <label htmlFor="calculationBase" className="block text-sm font-semibold text-gray-700 mb-1">
+            <label htmlFor="calculationBase" className="block text-sm font-medium text-gray-700 mb-1">
               Calculate Flow based on
             </label>
-            <div className="relative">
-              <select
-                id="calculationBase"
-                value={calculationBase}
-                onChange={(e) => {
-                  setCalculationBase(e.target.value);
-                  setManualFlowRate(''); // Clear manual flow if switching modes
-                }}
-                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white pr-10 appearance-none transition duration-200 focus:shadow-md"
-              >
-                <option value="manual_makeup">Manual Makeup Flow Rate</option>
-                <option value="manual_blowdown">Manual Blowdown Rate</option>
-                <option value="cw_data">Use Cooling Water Data</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-              </div>
-            </div>
+            <select
+              id="calculationBase"
+              value={calculationBase}
+              onChange={(e) => {
+                setCalculationBase(e.target.value);
+                setManualFlowRate(''); // Clear manual flow if switching modes
+                // Clear calculated flows if switching out of CW data mode handled by useEffect
+              }}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white pr-8"
+            >
+              <option value="manual_makeup">Manual Makeup Flow Rate</option>
+              <option value="manual_blowdown">Manual Blowdown Rate</option>
+              <option value="cw_data">Use Cooling Water Data</option>
+            </select>
           </div>
 
           {/* Conditional Inputs for Cooling Water Data */}
           {calculationBase === 'cw_data' && (
             <>
-              <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl space-y-4 shadow-inner">
-                <h3 className="text-lg font-bold text-blue-800 text-center">Cooling Water Flow Data</h3>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                <h3 className="text-lg font-semibold text-blue-800">Cooling Water Flow Data</h3>
                 <div>
-                  <label htmlFor="recirculationFlow" className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label htmlFor="recirculationFlow" className="block text-sm font-medium text-gray-700 mb-1">
                     Recirculation Flow (m³/hr)
                   </label>
                   <input
@@ -337,12 +320,12 @@ const App = () => {
                     value={recirculationFlow}
                     onChange={(e) => setRecirculationFlow(e.target.value)}
                     placeholder="e.g., 1000"
-                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0 transition duration-200 focus:shadow-md"
+                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
                     min="0"
                   />
                 </div>
                 <div>
-                  <label htmlFor="diffTemperature" className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label htmlFor="diffTemperature" className="block text-sm font-medium text-gray-700 mb-1">
                     Temperature Difference (ΔT in °C)
                   </label>
                   <input
@@ -351,40 +334,35 @@ const App = () => {
                     value={diffTemperature}
                     onChange={(e) => setDiffTemperature(e.target.value)}
                     placeholder="e.g., 10"
-                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0 transition duration-200 focus:shadow-md"
+                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
                     min="0"
                   />
                 </div>
 
                 {/* Display Calculated CW Flows */}
                 {(calculatedEvaporation !== null && calculatedBlowdown !== null && calculatedMakeup !== null) && (
-                  <div className="mt-4 p-3 bg-blue-100 border border-blue-300 rounded-lg text-sm text-blue-800 font-medium shadow-md">
-                    <h4 className="font-bold text-blue-900 mb-1">Calculated Flows:</h4>
-                    <p>Evaporation: <span className="font-semibold">{calculatedEvaporation.toFixed(2)} m³/hr</span></p>
-                    <p>Blowdown: <span className="font-semibold">{calculatedBlowdown.toFixed(2)} m³/hr</span></p>
-                    <p>Makeup: <span className="font-semibold">{calculatedMakeup.toFixed(2)} m³/hr</span></p>
+                  <div className="mt-4 p-3 bg-blue-100 border border-blue-300 rounded-md text-sm text-blue-800">
+                    <h4 className="font-semibold mb-1">Calculated Flows:</h4>
+                    <p>Evaporation: {calculatedEvaporation.toFixed(2)} m³/hr</p>
+                    <p>Blowdown: {calculatedBlowdown.toFixed(2)} m³/hr</p>
+                    <p>Makeup: {calculatedMakeup.toFixed(2)} m³/hr</p>
                   </div>
                 )}
 
                 {/* Dropdown for which calculated flow to use */}
                 <div>
-                  <label htmlFor="calculatedFlowType" className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label htmlFor="calculatedFlowType" className="block text-sm font-medium text-gray-700 mb-1">
                     Use this calculated flow for acid dosage:
                   </label>
-                  <div className="relative">
-                    <select
-                      id="calculatedFlowType"
-                      value={calculatedFlowType}
-                      onChange={(e) => setCalculatedFlowType(e.target.value)}
-                      className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white pr-10 appearance-none transition duration-200 focus:shadow-md"
-                    >
-                      <option value="use_calculated_makeup">Calculated Makeup Flow</option>
-                      <option value="use_calculated_blowdown">Calculated Blowdown Flow</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                    </div>
-                  </div>
+                  <select
+                    id="calculatedFlowType"
+                    value={calculatedFlowType}
+                    onChange={(e) => setCalculatedFlowType(e.target.value)}
+                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white pr-8"
+                  >
+                    <option value="use_calculated_makeup">Calculated Makeup Flow</option>
+                    <option value="use_calculated_blowdown">Calculated Blowdown Flow</option>
+                  </select>
                 </div>
               </div>
             </>
@@ -392,9 +370,8 @@ const App = () => {
 
           {/* Flow Rate Input (Manual or Display of Calculated) */}
           <div>
-            <label htmlFor="flowRate" className="block text-sm font-semibold text-gray-700 mb-1">
-              {calculationBase === 'manual_makeup' && 'Manual Makeup Flow Rate (m³/hr)'}
-              {calculationBase === 'manual_blowdown' && 'Manual Blowdown Rate (m³/hr)'}
+            <label htmlFor="flowRate" className="block text-sm font-medium text-gray-700 mb-1">
+              {calculationBase === 'manual_makeup' ? 'Manual Makeup Flow Rate (m³/hr)' : 'Manual Blowdown Rate (m³/hr)'}
               {calculationBase === 'cw_data' &&
                 (calculatedFlowType === 'use_calculated_makeup' ? 'Calculated Makeup Flow (m³/hr)' : 'Calculated Blowdown Flow (m³/hr)')
               }
@@ -408,7 +385,7 @@ const App = () => {
               }
               onChange={(e) => setManualFlowRate(e.target.value)}
               placeholder="e.g., 500"
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0 transition duration-200 focus:shadow-md"
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-outer-spin-button]:m-0"
               min="0"
               disabled={calculationBase === 'cw_data'} // Disable if using calculated flow
             />
@@ -416,16 +393,16 @@ const App = () => {
         </div>
 
         {/* Buttons */}
-        <div className="mt-8 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+        <div className="mt-6 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
           <button
             onClick={calculateAcidUsage}
-            className="w-full sm:flex-1 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
+            className="w-full sm:w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75"
           >
             Calculate Acid Usage
           </button>
           <button
             onClick={resetFields}
-            className="w-full sm:flex-1 bg-gradient-to-r from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 text-gray-800 font-bold py-3 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75"
+            className="w-full sm:w-1/2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-4 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75"
           >
             Reset
           </button>
@@ -434,36 +411,33 @@ const App = () => {
 
         {/* Result Display */}
         {acidUsageKgDay !== null && (
-          <div className="mt-8 p-5 bg-gradient-to-br from-green-50 to-teal-50 border border-green-200 rounded-xl text-center shadow-xl animate-fade-in">
-            <h2 className="text-xl font-extrabold text-green-800 mb-3">Calculation Result</h2>
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center shadow-inner">
+            <h2 className="text-xl font-semibold text-blue-800 mb-2">Result</h2>
             {acidUsageKgDay === 0 ? (
-              <p className="text-lg text-green-700 font-semibold">No acid required for pH adjustment.</p>
+              <p className="text-lg text-blue-700">No acid required for pH adjustment.</p>
             ) : (
-              <div className="space-y-2">
-                <p className="text-lg text-green-700">
+              <>
+                <p className="text-lg text-blue-700">
                   Estimated Acid Usage (Hourly):{' '}
-                  <span className="font-bold text-green-900 text-xl">
-                    {acidUsageKgHr.toFixed(2)} kg/hr
+                  <span className="font-bold text-blue-900">
+                    {acidUsageKgHr.toFixed(2)} kg/hr of {ACID_PROPERTIES[acidType].name}
                   </span>
-                  <span className="text-green-800 block text-sm">of {ACID_PROPERTIES[acidType].name}</span>
                 </p>
-                <p className="text-lg text-green-700">
+                <p className="text-lg text-blue-700 mt-2">
                   Estimated Acid Usage (Daily):{' '}
-                  <span className="font-bold text-green-900 text-xl">
-                    {acidUsageKgDay.toFixed(2)} kg/day
+                  <span className="font-bold text-blue-900">
+                    {acidUsageKgDay.toFixed(2)} kg/day of {ACID_PROPERTIES[acidType].name}
                   </span>
-                  <span className="text-green-800 block text-sm">of {ACID_PROPERTIES[acidType].name}</span>
                 </p>
-                <p className="text-lg text-green-700">
+                <p className="text-lg text-blue-700 mt-2">
                   Estimated Acid Usage (Monthly):{' '}
-                  <span className="font-bold text-green-900 text-xl">
-                    {acidUsageKgMonth.toFixed(2)} kg/month
+                  <span className="font-bold text-blue-900">
+                    {acidUsageKgMonth.toFixed(2)} kg/month of {ACID_PROPERTIES[acidType].name}
                   </span>
-                  <span className="text-green-800 block text-sm">of {ACID_PROPERTIES[acidType].name}</span>
                 </p>
-              </div>
+              </>
             )}
-            <p className="text-sm text-gray-600 mt-4">
+            <p className="text-sm text-gray-600 mt-2">
               (This calculation determines the acid needed to achieve the desired alkalinity in the cooling water, considering makeup and cycles of concentration.)
             </p>
           </div>
