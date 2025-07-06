@@ -1,6 +1,6 @@
 {
-  "homepage": "http://utongya.github.io/my-acid-calculator",
-  "name": "my-acid-calculator",
+  "homepage": "https://utongya.github.io/acid-calculator-app",
+  "name": "acid-calculator-app",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -17,9 +17,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
-    "predeploy": "npm run build", // This command runs before deploy
-    "deploy": "gh-pages -d build" // This command deploys the 'build' folder
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build", 
+    "deploy": "gh-pages -d build" 
   },
   "eslintConfig": {
     "extends": [
